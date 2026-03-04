@@ -1,7 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "unimart-dev-secret-change-in-production"
+  process.env.JWT_SECRET
 );
 
 const ISSUER = "unimart-api";

@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, type AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
 export const users = sqliteTable("users", {
@@ -25,7 +25,7 @@ export const categories = sqliteTable("categories", {
   slug: text("slug").notNull().unique(),
   description: text("description"),
   imgSrc: text("img_src"),
-  parentId: integer("parent_id").references((): ReturnType<typeof integer> => categories.id),
+  parentId: integer("parent_id").references((): AnySQLiteColumn => categories.id),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(datetime('now'))`),

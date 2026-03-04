@@ -252,6 +252,10 @@ export const supportMenuItems: MenuItem[] = [
     href: "/privacy-policy",
     label: "Privacy Policy",
   },
+  {
+    href: "/return-policy",
+    label: "Return Policy",
+  },
 ];
 
 export const navBrandList: { src: string; width: number; height: number }[] = [
