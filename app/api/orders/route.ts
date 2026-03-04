@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const { page, limit, offset } = parsePagination(searchParams);
 
-    const userOrders = db
+    const userOrders = await db
       .select({
         id: orders.id,
         status: orders.status,
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
       .offset(offset)
       .all();
 
-    const countResult = db
+    const countResult = await db
       .select({ count: sql<number>`count(*)` })
       .from(orders)
       .where(eq(orders.userId, auth.userId))
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
       return errorResponse("Validation failed", 422, parsed.error.issues);
     }
 
-    const cart = db
+    const cart = await db
       .select({
         id: cartItems.id,
         productId: cartItems.productId,
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
       0
     );
 
-    const order = db
+    const [order] = await db
       .insert(orders)
       .values({
         userId: auth.userId,
@@ -117,23 +117,20 @@ export async function POST(request: NextRequest) {
         paymentMethod: parsed.data.paymentMethod,
         notes: parsed.data.notes,
       })
-      .returning()
-      .get();
+      .returning();
 
     for (const item of cart) {
-      db.insert(orderItems)
-        .values({
-          orderId: order.id,
-          productId: item.productId,
-          quantity: item.quantity,
-          price: item.price,
-          size: item.size,
-          color: item.color,
-        })
-        .run();
+      await db.insert(orderItems).values({
+        orderId: order.id,
+        productId: item.productId,
+        quantity: item.quantity,
+        price: item.price,
+        size: item.size,
+        color: item.color,
+      });
     }
 
-    db.delete(cartItems).where(eq(cartItems.userId, auth.userId)).run();
+    await db.delete(cartItems).where(eq(cartItems.userId, auth.userId)).run();
 
     return successResponse(
       {

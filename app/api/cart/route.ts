@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     const auth = await authenticate(request);
     if (isAuthError(auth)) return auth;
 
-    const items = db
+    const items = await db
       .select({
         id: cartItems.id,
         quantity: cartItems.quantity,
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     const { productId, quantity, size, color } = parsed.data;
 
-    const product = db
+    const product = await db
       .select({ id: products.id })
       .from(products)
       .where(eq(products.id, productId))
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
       return errorResponse("Product not found", 404);
     }
 
-    const existing = db
+    const existing = await db
       .select()
       .from(cartItems)
       .where(
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
       .get();
 
     if (existing) {
-      const updated = db
+      const updated = await db
         .update(cartItems)
         .set({ quantity: existing.quantity + quantity })
         .where(eq(cartItems.id, existing.id))
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
       return successResponse(updated);
     }
 
-    const item = db
+    const item = await db
       .insert(cartItems)
       .values({ userId: auth.userId, productId, quantity, size, color })
       .returning()
@@ -130,7 +130,7 @@ export async function PUT(request: NextRequest) {
 
     const { itemId, quantity } = parsed.data;
 
-    const item = db
+    const item = await db
       .select()
       .from(cartItems)
       .where(and(eq(cartItems.id, itemId), eq(cartItems.userId, auth.userId)))
@@ -141,11 +141,11 @@ export async function PUT(request: NextRequest) {
     }
 
     if (quantity === 0) {
-      db.delete(cartItems).where(eq(cartItems.id, itemId)).run();
+      await db.delete(cartItems).where(eq(cartItems.id, itemId)).run();
       return successResponse({ message: "Item removed from cart" });
     }
 
-    const updated = db
+    const updated = await db
       .update(cartItems)
       .set({ quantity })
       .where(eq(cartItems.id, itemId))
@@ -170,7 +170,7 @@ export async function DELETE(request: NextRequest) {
       return errorResponse("Validation failed", 422, parsed.error.issues);
     }
 
-    const item = db
+    const item = await db
       .select()
       .from(cartItems)
       .where(
@@ -185,7 +185,7 @@ export async function DELETE(request: NextRequest) {
       return errorResponse("Cart item not found", 404);
     }
 
-    db.delete(cartItems).where(eq(cartItems.id, parsed.data.itemId)).run();
+    await db.delete(cartItems).where(eq(cartItems.id, parsed.data.itemId)).run();
 
     return successResponse({ message: "Item removed from cart" });
   } catch {

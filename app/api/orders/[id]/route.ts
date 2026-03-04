@@ -19,7 +19,7 @@ export async function GET(request: NextRequest, { params }: Params) {
       return errorResponse("Invalid order ID", 400);
     }
 
-    const order = db
+    const order = await db
       .select()
       .from(orders)
       .where(and(eq(orders.id, orderId), eq(orders.userId, auth.userId)))
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest, { params }: Params) {
       return errorResponse("Order not found", 404);
     }
 
-    const items = db
+    const items = await db
       .select({
         id: orderItems.id,
         quantity: orderItems.quantity,

@@ -1,6 +1,45 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useState, useRef } from "react";
+import { useAuthStore } from "@/context/authStore";
+
 export default function Signin() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const dismissRef = useRef<HTMLButtonElement>(null);
+  const setAuth = useAuthStore((s) => s.setAuth);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Login failed. Please check your credentials.");
+      } else {
+        setAuth(data.data.user, data.data.token);
+        setEmail("");
+        setPassword("");
+        setError("");
+        dismissRef.current?.click();
+      }
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div
       className="rbt-default-modal modal fade has-rbt-top-folder-shape"
@@ -27,6 +66,7 @@ export default function Signin() {
           </div>
           <div className="modal-header">
             <button
+              ref={dismissRef}
               type="button"
               className="rbt-round-btn rbt-modal-dis-btn"
               data-bs-dismiss="modal"
@@ -55,114 +95,71 @@ export default function Signin() {
                   >
                     Sign In To Proceed
                   </h6>
-                  <div className="rbt-tab rbt-round-shape-tab">
-                    {/* Start tabs */}
-                    <ul
-                      className="nav nav-tabs"
-                      id="registerFormTab1"
-                      role="tablist"
-                    >
-                      <li className="nav-item" role="presentation">
-                        <button
-                          className="nav-link active"
-                          id="rbt-form-tab-id-1"
-                          data-bs-toggle="tab"
-                          data-bs-target="#rbt-form-tab-pane-1"
-                          type="button"
-                          role="tab"
-                          aria-controls="rbt-form-tab-pane-1"
-                          aria-selected="true"
-                        >
-                          <i className="fa-sharp fa-regular fa-phone" />
-                          Phone Number
-                        </button>
-                      </li>
-                      <li className="nav-item" role="presentation">
-                        <button
-                          className="nav-link"
-                          id="rbt-form-tab-id-2"
-                          data-bs-toggle="tab"
-                          data-bs-target="#rbt-form-tab-pane-2"
-                          type="button"
-                          role="tab"
-                          aria-controls="rbt-form-tab-pane-2"
-                          aria-selected="false"
-                        >
-                          <i className="fa-sharp fa-regular fa-envelope" />
-                          Email
-                        </button>
-                      </li>
-                    </ul>
-                    {/* End tabs */}
-                    <form>
-                      {/* Start tabs content */}
-                      <div className="tab-content" id="registerFormTab1Content">
-                        <div
-                          className="tab-pane fade show active"
-                          id="rbt-form-tab-pane-1"
-                          role="tabpanel"
-                          aria-labelledby="rbt-form-tab-id-1"
-                          tabIndex={0}
-                        >
-                          <div className="rbt-input-field-grp">
-                            <label
-                              className="rbt-field-label"
-                              htmlFor="modal_signin_number"
-                            >
-                              Your Number
-                              <span className="rbt-text-color-danger">*</span>
-                            </label>
-                            <input
-                              className="rbt-input-field"
-                              placeholder="Number"
-                              type="text"
-                              id="modal_signin_number"
-                            />
-                          </div>
-                        </div>
-                        <div
-                          className="tab-pane fade"
-                          id="rbt-form-tab-pane-2"
-                          role="tabpanel"
-                          aria-labelledby="rbt-form-tab-id-2"
-                          tabIndex={0}
-                        >
-                          <div className="rbt-input-field-grp">
-                            <label
-                              className="rbt-field-label"
-                              htmlFor="modal_signin_email"
-                            >
-                              Your Email
-                              <span className="rbt-text-color-danger">*</span>
-                            </label>
-                            <input
-                              className="rbt-input-field"
-                              placeholder="Email"
-                              type="email"
-                              id="modal_signin_email"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      {/* End tabs content */}
-                      <button
-                        type="submit"
-                        className="rbt-btn d-block w-100 mt--24 mb--16"
+                  <form onSubmit={handleSubmit}>
+                    <div className="rbt-input-field-grp">
+                      <label
+                        className="rbt-field-label"
+                        htmlFor="modal_signin_email"
                       >
-                        Continue
-                      </button>
-                      <div className="rbt-check-group">
-                        <input
-                          id="modal_login_checked1"
-                          type="checkbox"
-                          name="login"
-                        />
-                        <label htmlFor="modal_login_checked1">
-                          Stay Logged In
-                        </label>
-                      </div>
-                    </form>
-                  </div>
+                        Email Address
+                        <span className="rbt-text-color-danger">*</span>
+                      </label>
+                      <input
+                        className="rbt-input-field"
+                        placeholder="Enter your email"
+                        type="email"
+                        id="modal_signin_email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        autoComplete="email"
+                      />
+                    </div>
+                    <div className="rbt-input-field-grp mt--16">
+                      <label
+                        className="rbt-field-label"
+                        htmlFor="modal_signin_password"
+                      >
+                        Password
+                        <span className="rbt-text-color-danger">*</span>
+                      </label>
+                      <input
+                        className="rbt-input-field"
+                        placeholder="Enter your password"
+                        type="password"
+                        id="modal_signin_password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        autoComplete="current-password"
+                      />
+                    </div>
+                    {error && (
+                      <p
+                        className="mt--12 mb--0"
+                        style={{ color: "#e53e3e", fontSize: "0.875rem" }}
+                      >
+                        {error}
+                      </p>
+                    )}
+                    <button
+                      type="submit"
+                      className="rbt-btn d-block w-100 mt--24 mb--16"
+                      disabled={loading}
+                    >
+                      {loading ? "Signing in..." : "Sign In"}
+                    </button>
+                    <div className="rbt-check-group">
+                      <input
+                        id="modal_login_checked1"
+                        type="checkbox"
+                        name="login"
+                      />
+                      <label htmlFor="modal_login_checked1">
+                        Stay Logged In
+                      </label>
+                    </div>
+                  </form>
                   {/* Separator */}
                   <div className="d-flex align-items-center justify-content-center mb--24 mt--24">
                     <hr className="rbt-separator rbt-bg-color-gray-light mb--0" />
@@ -171,7 +168,7 @@ export default function Signin() {
                   </div>
                   {/* Start social login button */}
                   <button
-                    type="submit"
+                    type="button"
                     className="rbt-btn rbt-btn-border rbt-social-login-btn d-block w-100 mb--16 rbt-social-login-btn"
                   >
                     <Image
@@ -184,7 +181,7 @@ export default function Signin() {
                     Continue with Facebook
                   </button>
                   <button
-                    type="submit"
+                    type="button"
                     className="rbt-btn rbt-btn-border rbt-social-login-btn d-block w-100 rbt-social-login-btn"
                   >
                     <Image
@@ -198,7 +195,7 @@ export default function Signin() {
                   </button>
                   {/* End social login button */}
                   <div className="rbt-login-system-switch rbt-link-hover">
-                    Don't have an account?
+                    Don&apos;t have an account?
                     <button
                       className="rbt-switch-btn"
                       data-bs-toggle="modal"
@@ -214,134 +211,30 @@ export default function Signin() {
                 <div className="rbt-login-form-bottom rbt-swiper-container-pagination position-relative">
                   <div className="swiper rbt-log-slide-activation pb--40">
                     <div className="swiper-wrapper">
-                      <div className="swiper-slide">
-                        <div className="rbt-client-review">
-                          <ul className="rbt-rating-icon-list d-flex justify-content-center">
-                            <li>
-                              <i className="fa-solid fa-star rbt-rated-icon" />
-                            </li>
-                            <li>
-                              <i className="fa-solid fa-star rbt-rated-icon" />
-                            </li>
-                            <li>
-                              <i className="fa-solid fa-star rbt-rated-icon" />
-                            </li>
-                            <li>
-                              <i className="fa-solid fa-star rbt-rated-icon" />
-                            </li>
-                            <li>
-                              <i className="fa-solid fa-star rbt-rated-icon" />
-                            </li>
-                          </ul>
-                          <p className="rbt-review-text mt--8 mb--12">
-                            "The shirt fits great, very good quality of the
-                            material. Training in it is pure pleasure."
-                          </p>
-                          <div className="d-flex flex-wrap justify-content-center rbt-gap--8">
-                            <h6 className="mb--0">Szilágyi Erik</h6>
-                            <div className="rbt-verified-badge badge-rounded">
-                              <i className="fa-sharp fa-solid fa-shield-check" />
-                              Verified Reviewer
+                      {[1, 2, 3, 4].map((i) => (
+                        <div className="swiper-slide" key={i}>
+                          <div className="rbt-client-review">
+                            <ul className="rbt-rating-icon-list d-flex justify-content-center">
+                              {[1, 2, 3, 4, 5].map((s) => (
+                                <li key={s}>
+                                  <i className="fa-solid fa-star rbt-rated-icon" />
+                                </li>
+                              ))}
+                            </ul>
+                            <p className="rbt-review-text mt--8 mb--12">
+                              &ldquo;The shirt fits great, very good quality of
+                              the material. Training in it is pure pleasure.&rdquo;
+                            </p>
+                            <div className="d-flex flex-wrap justify-content-center rbt-gap--8">
+                              <h6 className="mb--0">Szilágyi Erik</h6>
+                              <div className="rbt-verified-badge badge-rounded">
+                                <i className="fa-sharp fa-solid fa-shield-check" />
+                                Verified Reviewer
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="swiper-slide">
-                        <div className="rbt-client-review">
-                          <ul className="rbt-rating-icon-list d-flex justify-content-center">
-                            <li>
-                              <i className="fa-solid fa-star rbt-rated-icon" />
-                            </li>
-                            <li>
-                              <i className="fa-solid fa-star rbt-rated-icon" />
-                            </li>
-                            <li>
-                              <i className="fa-solid fa-star rbt-rated-icon" />
-                            </li>
-                            <li>
-                              <i className="fa-solid fa-star rbt-rated-icon" />
-                            </li>
-                            <li>
-                              <i className="fa-solid fa-star rbt-rated-icon" />
-                            </li>
-                          </ul>
-                          <p className="rbt-review-text mt--8 mb--12">
-                            "The shirt fits great, very good quality of the
-                            material. Training in it is pure pleasure."
-                          </p>
-                          <div className="d-flex flex-wrap justify-content-center rbt-gap--8">
-                            <h6 className="mb--0">Szilágyi Erik</h6>
-                            <div className="rbt-verified-badge badge-rounded">
-                              <i className="fa-sharp fa-solid fa-shield-check" />
-                              Verified Reviewer
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="swiper-slide">
-                        <div className="rbt-client-review">
-                          <ul className="rbt-rating-icon-list d-flex justify-content-center">
-                            <li>
-                              <i className="fa-solid fa-star rbt-rated-icon" />
-                            </li>
-                            <li>
-                              <i className="fa-solid fa-star rbt-rated-icon" />
-                            </li>
-                            <li>
-                              <i className="fa-solid fa-star rbt-rated-icon" />
-                            </li>
-                            <li>
-                              <i className="fa-solid fa-star rbt-rated-icon" />
-                            </li>
-                            <li>
-                              <i className="fa-solid fa-star rbt-rated-icon" />
-                            </li>
-                          </ul>
-                          <p className="rbt-review-text mt--8 mb--12">
-                            "The shirt fits great, very good quality of the
-                            material. Training in it is pure pleasure."
-                          </p>
-                          <div className="d-flex flex-wrap justify-content-center rbt-gap--8">
-                            <h6 className="mb--0">Szilágyi Erik</h6>
-                            <div className="rbt-verified-badge badge-rounded">
-                              <i className="fa-sharp fa-solid fa-shield-check" />
-                              Verified Reviewer
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="swiper-slide">
-                        <div className="rbt-client-review">
-                          <ul className="rbt-rating-icon-list d-flex justify-content-center">
-                            <li>
-                              <i className="fa-solid fa-star rbt-rated-icon" />
-                            </li>
-                            <li>
-                              <i className="fa-solid fa-star rbt-rated-icon" />
-                            </li>
-                            <li>
-                              <i className="fa-solid fa-star rbt-rated-icon" />
-                            </li>
-                            <li>
-                              <i className="fa-solid fa-star rbt-rated-icon" />
-                            </li>
-                            <li>
-                              <i className="fa-solid fa-star rbt-rated-icon" />
-                            </li>
-                          </ul>
-                          <p className="rbt-review-text mt--8 mb--12">
-                            "The shirt fits great, very good quality of the
-                            material. Training in it is pure pleasure."
-                          </p>
-                          <div className="d-flex flex-wrap justify-content-center rbt-gap--8">
-                            <h6 className="mb--0">Szilágyi Erik</h6>
-                            <div className="rbt-verified-badge badge-rounded">
-                              <i className="fa-sharp fa-solid fa-shield-check" />
-                              Verified Reviewer
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                      ))}
                     </div>
                     <div className="swiper-pagination rbt-swiper-progress rbt-swiper-pagination-dot-extend" />
                   </div>

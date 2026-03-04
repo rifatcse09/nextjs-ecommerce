@@ -1,22 +1,13 @@
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
+import { createClient } from "@libsql/client";
+import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "./schema";
 import bcrypt from "bcryptjs";
-import path from "path";
-import fs from "fs";
 
-const DB_PATH = path.join(process.cwd(), "data", "unimart.db");
+const url = process.env.TURSO_DATABASE_URL ?? "file:./data/unimart.db";
+const authToken = process.env.TURSO_AUTH_TOKEN;
 
-if (fs.existsSync(DB_PATH)) {
-  fs.unlinkSync(DB_PATH);
-  console.log("Removed existing database");
-}
-
-const sqlite = new Database(DB_PATH);
-sqlite.pragma("journal_mode = WAL");
-sqlite.pragma("foreign_keys = ON");
-
-const db = drizzle(sqlite, { schema });
+const client = createClient({ url, authToken });
+const db = drizzle(client, { schema });
 
 function slugify(text: string): string {
   return text
@@ -28,8 +19,17 @@ function slugify(text: string): string {
 async function seed() {
   console.log("Seeding database...\n");
 
-  // Create tables
-  sqlite.exec(`
+  // Drop existing tables (order matters due to foreign keys)
+  await client.executeMultiple(`
+    DROP TABLE IF EXISTS reviews;
+    DROP TABLE IF EXISTS order_items;
+    DROP TABLE IF EXISTS orders;
+    DROP TABLE IF EXISTS wishlist_items;
+    DROP TABLE IF EXISTS cart_items;
+    DROP TABLE IF EXISTS products;
+    DROP TABLE IF EXISTS categories;
+    DROP TABLE IF EXISTS users;
+
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -135,30 +135,28 @@ async function seed() {
   const adminPassword = await bcrypt.hash("admin123", 12);
   const userPassword = await bcrypt.hash("user123", 12);
 
-  db.insert(schema.users)
-    .values([
-      {
-        name: "Admin User",
-        email: "admin@unimart.com",
-        password: adminPassword,
-        role: "admin",
-        phone: "+1234567890",
-      },
-      {
-        name: "Jane Doe",
-        email: "jane@example.com",
-        password: userPassword,
-        role: "customer",
-        phone: "+0987654321",
-      },
-      {
-        name: "John Smith",
-        email: "john@example.com",
-        password: userPassword,
-        role: "customer",
-      },
-    ])
-    .run();
+  await db.insert(schema.users).values([
+    {
+      name: "Admin User",
+      email: "admin@unimart.com",
+      password: adminPassword,
+      role: "admin",
+      phone: "+1234567890",
+    },
+    {
+      name: "Jane Doe",
+      email: "jane@example.com",
+      password: userPassword,
+      role: "customer",
+      phone: "+0987654321",
+    },
+    {
+      name: "John Smith",
+      email: "john@example.com",
+      password: userPassword,
+      role: "customer",
+    },
+  ]);
 
   console.log("3 users seeded");
 
@@ -176,7 +174,7 @@ async function seed() {
     { name: "Knitwear", slug: "knitwear", description: "Sweaters, cardigans, and knit pieces" },
   ];
 
-  db.insert(schema.categories).values(fashionCategories).run();
+  await db.insert(schema.categories).values(fashionCategories);
   console.log(`${fashionCategories.length} categories seeded`);
 
   // Seed fashion products
@@ -208,34 +206,32 @@ async function seed() {
   ];
 
   const categoryMap = new Map<string, number>();
-  const cats = db.select().from(schema.categories).all();
+  const cats = await db.select().from(schema.categories).all();
   for (const cat of cats) {
     categoryMap.set(cat.name, cat.id);
   }
 
   for (let i = 0; i < fashionProducts.length; i++) {
     const p = fashionProducts[i];
-    db.insert(schema.products)
-      .values({
-        title: p.title,
-        slug: slugify(p.title),
-        description: `Premium quality ${p.title.toLowerCase()}. Made with the finest materials for comfort and style.`,
-        price: p.price,
-        oldPrice: p.oldPrice,
-        discount: p.discount,
-        imgSrc: p.imgSrc,
-        categoryId: categoryMap.get(p.category) ?? null,
-        rating: p.rating,
-        reviewCount: p.reviewCount,
-        inStock: true,
-        sku: `FM-${String(i + 1).padStart(4, "0")}`,
-        tags: JSON.stringify(p.tags),
-        brand: p.brand,
-        color: p.color,
-        sizes: JSON.stringify(p.sizes),
-        featured: p.featured,
-      })
-      .run();
+    await db.insert(schema.products).values({
+      title: p.title,
+      slug: slugify(p.title),
+      description: `Premium quality ${p.title.toLowerCase()}. Made with the finest materials for comfort and style.`,
+      price: p.price,
+      oldPrice: p.oldPrice,
+      discount: p.discount,
+      imgSrc: p.imgSrc,
+      categoryId: categoryMap.get(p.category) ?? null,
+      rating: p.rating,
+      reviewCount: p.reviewCount,
+      inStock: true,
+      sku: `FM-${String(i + 1).padStart(4, "0")}`,
+      tags: JSON.stringify(p.tags),
+      brand: p.brand,
+      color: p.color,
+      sizes: JSON.stringify(p.sizes),
+      featured: p.featured,
+    });
   }
 
   console.log(`${fashionProducts.length} products seeded`);
@@ -252,20 +248,18 @@ async function seed() {
     { userId: 3, productId: 10, rating: 4, title: "Stylish boots", comment: "Great looking boots. Take a few days to break in but then they're perfect." },
   ];
 
-  db.insert(schema.reviews).values(sampleReviews).run();
+  await db.insert(schema.reviews).values(sampleReviews);
   console.log(`${sampleReviews.length} reviews seeded`);
 
   // Seed sample cart items for demo user
-  db.insert(schema.cartItems)
-    .values([
-      { userId: 2, productId: 1, quantity: 1, size: "M" },
-      { userId: 2, productId: 5, quantity: 1, size: "L", color: "Blue" },
-    ])
-    .run();
+  await db.insert(schema.cartItems).values([
+    { userId: 2, productId: 1, quantity: 1, size: "M" },
+    { userId: 2, productId: 5, quantity: 1, size: "L", color: "Blue" },
+  ]);
   console.log("2 cart items seeded for demo user");
 
   // Seed a sample order
-  const order = db
+  const [order] = await db
     .insert(schema.orders)
     .values({
       userId: 2,
@@ -283,15 +277,12 @@ async function seed() {
       paymentMethod: "card",
       paymentStatus: "paid",
     })
-    .returning()
-    .get();
+    .returning();
 
-  db.insert(schema.orderItems)
-    .values([
-      { orderId: order.id, productId: 1, quantity: 1, price: 179.98, size: "M" },
-      { orderId: order.id, productId: 5, quantity: 1, price: 299.99, size: "L", color: "Blue" },
-    ])
-    .run();
+  await db.insert(schema.orderItems).values([
+    { orderId: order.id, productId: 1, quantity: 1, price: 179.98, size: "M" },
+    { orderId: order.id, productId: 5, quantity: 1, price: 299.99, size: "L", color: "Blue" },
+  ]);
   console.log("1 sample order seeded\n");
 
   console.log("Database seeded successfully!");

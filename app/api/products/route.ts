@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       conditions.push(like(products.title, `%${search}%`));
     }
     if (category) {
-      const cat = db
+      const cat = await db
         .select({ id: categories.id })
         .from(categories)
         .where(eq(categories.slug, category))

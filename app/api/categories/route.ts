@@ -5,7 +5,7 @@ import { eq, sql } from "drizzle-orm";
 
 export async function GET() {
   try {
-    const items = db
+    const items = await db
       .select({
         id: categories.id,
         name: categories.name,

@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const auth = await authenticate(request);
     if (isAuthError(auth)) return auth;
 
-    const items = db
+    const items = await db
       .select({
         id: wishlistItems.id,
         addedAt: wishlistItems.createdAt,
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
 
     const { productId } = parsed.data;
 
-    const product = db
+    const product = await db
       .select({ id: products.id })
       .from(products)
       .where(eq(products.id, productId))
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       return errorResponse("Product not found", 404);
     }
 
-    const existing = db
+    const existing = await db
       .select()
       .from(wishlistItems)
       .where(
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
       return errorResponse("Product already in wishlist", 409);
     }
 
-    const item = db
+    const item = await db
       .insert(wishlistItems)
       .values({ userId: auth.userId, productId })
       .returning()
@@ -101,7 +101,7 @@ export async function DELETE(request: NextRequest) {
       return errorResponse("Validation failed", 422, parsed.error.issues);
     }
 
-    const item = db
+    const item = await db
       .select()
       .from(wishlistItems)
       .where(
@@ -116,7 +116,7 @@ export async function DELETE(request: NextRequest) {
       return errorResponse("Item not in wishlist", 404);
     }
 
-    db.delete(wishlistItems).where(eq(wishlistItems.id, item.id)).run();
+    await db.delete(wishlistItems).where(eq(wishlistItems.id, item.id)).run();
 
     return successResponse({ message: "Removed from wishlist" });
   } catch {

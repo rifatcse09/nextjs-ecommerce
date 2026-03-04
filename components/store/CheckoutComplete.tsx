@@ -1,9 +1,18 @@
+"use client";
+
 import { furnitureSliderProducts } from "@/data/products/furnitures";
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
+import React, { useEffect } from "react";
+import { useStore } from "@/context/store";
 
 export default function CheckoutComplete() {
+  const setCartProducts = useStore((s) => s.setCartProducts);
+
+  useEffect(() => {
+    setCartProducts([]);
+  }, [setCartProducts]);
+
   return (
     <div className="rbt-component-area rbt-cart-page rbt-section-gapBottom rbt-bg-color-white">
       <div className="container">

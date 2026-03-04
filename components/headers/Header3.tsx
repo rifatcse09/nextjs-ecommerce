@@ -20,6 +20,7 @@ import SearchToggler from "./headerComponents/SearchToggler";
 import { useSticky } from "@/hooks/useSticky";
 import MobileMenuToggler from "../common/MobileMenuToggler";
 import NavFilterTab from "./headerComponents/NavFilterTab";
+import HeaderUserButton from "./headerComponents/HeaderUserButton";
 
 export default function Header3({ showFeatures = true, sticky = false }) {
   const isSticky = useSticky();
@@ -108,14 +109,7 @@ export default function Header3({ showFeatures = true, sticky = false }) {
                     data-tooltip="Profile"
                     data-tooltip-position="bottom"
                   >
-                    <a
-                      className="rbt-round-btn rbt-bg-static-gray"
-                      href="#!"
-                      data-bs-toggle="modal"
-                      data-bs-target="#signinModal"
-                    >
-                      <i className="fa-regular fa-user" />
-                    </a>
+                    <HeaderUserButton className="rbt-round-btn rbt-bg-static-gray" />
                   </li>
                   <li
                     className="rbt-access-box rbt-scroll-trigger fade_in animation-order-4 tooltips tooltip-distance-lg"
@@ -346,17 +340,10 @@ export default function Header3({ showFeatures = true, sticky = false }) {
                 </li>
                 <li
                   className="rbt-access-box rbt-scroll-trigger fade_in animation-order-3 d-none d-lg-flex tooltips tooltip-distance-lg"
-                  data-tooltip="Sign In"
+                  data-tooltip="Profile"
                   data-tooltip-position="bottom"
                 >
-                  <a
-                    className="rbt-round-btn has-rbt-md-fsize"
-                    href="#!"
-                    data-bs-toggle="modal"
-                    data-bs-target="#signinModal"
-                  >
-                    <i className="fa-regular fa-user" />
-                  </a>
+                  <HeaderUserButton className="rbt-round-btn has-rbt-md-fsize" />
                 </li>
                 <li
                   className="rbt-access-box rbt-scroll-trigger fade_in animation-order-4 tooltips tooltip-distance-lg d-none d-lg-flex"

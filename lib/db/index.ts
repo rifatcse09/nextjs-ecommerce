@@ -1,13 +1,11 @@
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
+import { createClient } from "@libsql/client";
+import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "./schema";
-import path from "path";
 
-const DB_PATH = path.join(process.cwd(), "data", "unimart.db");
+const client = createClient({
+  url: process.env.TURSO_DATABASE_URL ?? "file:./data/unimart.db",
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
 
-const sqlite = new Database(DB_PATH);
-sqlite.pragma("journal_mode = WAL");
-sqlite.pragma("foreign_keys = ON");
-
-export const db = drizzle(sqlite, { schema });
+export const db = drizzle(client, { schema });
 export type DB = typeof db;

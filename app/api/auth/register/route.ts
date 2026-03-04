@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     const { name, email, password, phone } = parsed.data;
 
-    const existing = db
+    const existing = await db
       .select({ id: users.id })
       .from(users)
       .where(eq(users.email, email))
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
 
     const hashedPassword = await hashPassword(password);
 
-    const result = db
+    const result = await db
       .insert(users)
       .values({ name, email, password: hashedPassword, phone })
       .returning({

@@ -15,7 +15,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
       return errorResponse("Invalid product ID", 400);
     }
 
-    const product = db
+    const product = await db
       .select({
         id: products.id,
         title: products.title,
@@ -49,7 +49,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
       return errorResponse("Product not found", 404);
     }
 
-    const productReviews = db
+    const productReviews = await db
       .select({
         id: reviews.id,
         rating: reviews.rating,
@@ -63,7 +63,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
       .where(eq(reviews.productId, productId))
       .all();
 
-    const avgRating = db
+    const avgRating = await db
       .select({ avg: sql<number>`avg(${reviews.rating})` })
       .from(reviews)
       .where(eq(reviews.productId, productId))

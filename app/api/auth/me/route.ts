@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const auth = await authenticate(request);
     if (isAuthError(auth)) return auth;
 
-    const user = db
+    const user = await db
       .select({
         id: users.id,
         name: users.name,

@@ -13,8 +13,8 @@
   },
   "dependencies": {
     "@fancyapps/ui": "^6.1.10",
+    "@libsql/client": "^0.17.0",
     "bcryptjs": "^3.0.3",
-    "better-sqlite3": "^12.6.2",
     "bootstrap": "^5.3.8",
     "drift-zoom": "^1.5.1",
     "drizzle-orm": "^0.45.1",
@@ -35,7 +35,6 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^3.0.0",
-    "@types/better-sqlite3": "^7.6.13",
     "@types/bootstrap": "^5.2.10",
     "@types/imagesloaded": "^4.1.7",
     "@types/isotope-layout": "^3.0.15",

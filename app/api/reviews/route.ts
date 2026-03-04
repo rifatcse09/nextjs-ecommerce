@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       return errorResponse("Invalid product_id", 400);
     }
 
-    const items = db
+    const items = await db
       .select({
         id: reviews.id,
         rating: reviews.rating,
@@ -51,13 +51,13 @@ export async function GET(request: NextRequest) {
       .offset(offset)
       .all();
 
-    const countResult = db
+    const countResult = await db
       .select({ count: sql<number>`count(*)` })
       .from(reviews)
       .where(eq(reviews.productId, pid))
       .get();
 
-    const avgResult = db
+    const avgResult = await db
       .select({ avg: sql<number>`avg(${reviews.rating})` })
       .from(reviews)
       .where(eq(reviews.productId, pid))
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
 
     const { productId, rating, title, comment } = parsed.data;
 
-    const product = db
+    const product = await db
       .select({ id: products.id })
       .from(products)
       .where(eq(products.id, productId))
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
       return errorResponse("Product not found", 404);
     }
 
-    const existingReview = db
+    const existingReview = await db
       .select({ id: reviews.id })
       .from(reviews)
       .where(
@@ -111,14 +111,13 @@ export async function POST(request: NextRequest) {
       return errorResponse("You already reviewed this product", 409);
     }
 
-    const review = db
+    const review = await db
       .insert(reviews)
       .values({ userId: auth.userId, productId, rating, title, comment })
       .returning()
       .get();
 
-    // Update product review count and average rating
-    const stats = db
+    const stats = await db
       .select({
         count: sql<number>`count(*)`,
         avg: sql<number>`avg(${reviews.rating})`,
@@ -128,7 +127,8 @@ export async function POST(request: NextRequest) {
       .get();
 
     if (stats) {
-      db.update(products)
+      await db
+        .update(products)
         .set({
           reviewCount: stats.count,
           rating: Math.round((stats.avg ?? 0) * 10) / 10,

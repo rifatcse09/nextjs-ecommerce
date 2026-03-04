@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
 
     const { email, password } = parsed.data;
 
-    const user = db
+    const user = await db
       .select()
       .from(users)
       .where(eq(users.email, email))
